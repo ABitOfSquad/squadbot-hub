@@ -1,7 +1,7 @@
 var net = require("net")
 var fs = require("fs")
 
-function print(text, color) {
+global.print = function (text, color) {
     var output = ""
     
     if (color) {
@@ -20,7 +20,7 @@ function print(text, color) {
     }
     
     console.log(output);
-}
+};
 
 var server = net.createServer(function(socket) {
     function send(type, data) {
@@ -31,7 +31,7 @@ var server = net.createServer(function(socket) {
         }
     }
     
-    print("Connected to " + socket.remoteAddress)
+    print(socket.remoteAddress + " Connected to SPM node")
     
     socket.on("data", function(data) {
         try {
@@ -57,7 +57,7 @@ var server = net.createServer(function(socket) {
                         send("error", "Requested protocol not known")
                     }
                     
-                    var fileList = fs.readdirSync("protocols/" + req.name)
+                    //var fileList = fs.readdirSync("protocols/" + req.name)
                     var files = []
                     
                     for (var i = 0; i < fileList.length; i++) {
@@ -84,4 +84,5 @@ var server = net.createServer(function(socket) {
 
 server.listen(4575)
 
-print("Server now running")
+//temporarily call for debugging sakes
+require("./ProtocolReciever");
