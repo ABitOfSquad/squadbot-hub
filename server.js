@@ -1,7 +1,15 @@
 var net = require("net")
 var fs = require("fs")
+var protocolDownloader = require("./protocols/ProtocolDownloader");
+var protocolManager = require("./protocols/ProtocolManager");
 
-global.print = function (text, color) {
+/**
+ * Prints a line to the console in a fancy format
+ *
+ * @param text
+ * @param color
+ */
+global.print = function print(text, color) {
     var output = ""
     
     if (color) {
@@ -31,9 +39,13 @@ var server = net.createServer(function(socket) {
         }
     }
     
-    print(socket.remoteAddress + " Connected to SPM node")
-    
+    print(socket.remoteAddress + " Connected to SPM node");
+
+    /**
+     * Handle data
+     */
     socket.on("data", function(data) {
+
         try {
             try {
                 var req = JSON.parse(data.toString("utf-8"))
@@ -47,7 +59,7 @@ var server = net.createServer(function(socket) {
             
             switch (req.type) {
                 case "getProtocol":
-                    if (!req.name) {
+                    /**if (!req.name) {
                         send("error", "Missing protocol name")
                     }
                     
@@ -57,7 +69,7 @@ var server = net.createServer(function(socket) {
                         send("error", "Requested protocol not known")
                     }
                     
-                    //var fileList = fs.readdirSync("protocols/" + req.name)
+                    var fileList = fs.readdirSync("cache/" + req.name)
                     var files = []
                     
                     for (var i = 0; i < fileList.length; i++) {
@@ -68,7 +80,14 @@ var server = net.createServer(function(socket) {
                     }
                     
                     send("saveProtocol", files)
-                    socket.destroy()
+                    socket.destroy()*/
+                    break;
+                case "getProtocolList":
+                    protocolManager.reloadProtocols();
+                    var list = protocolManager.getProtocols();
+                    send("protocolList", list);
+
+                    socket.destroy();
                     break;
                 default:
                     send("error", "Unknown type")
@@ -79,10 +98,11 @@ var server = net.createServer(function(socket) {
         catch (err) {
             console.log(err.stack);
         }
-    })
-})
+    });
 
-server.listen(4575)
 
-//temporarily call for debugging sakes
-require("./ProtocolReciever");
+
+});
+
+server.listen(4575);
+print("Server started! (" + (process.uptime()) + " s)");
