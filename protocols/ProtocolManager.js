@@ -1,11 +1,12 @@
 var protocolList = [];
-
 var fs = require("fs");
+
+reloadPrtcls();
 
 exports.reloadProtocols = function(){ reloadPrtcls() };
 
 function reloadPrtcls() {
-    protocolList = fs.readdirSync("protocols/cache/")
+    protocolList = fs.readdirSync("protocols/cache/");
     return protocolList;
 }
 

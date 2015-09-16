@@ -1,5 +1,6 @@
-var net = require("net")
-var fs = require("fs")
+var net = require("net");
+var path = require('path');
+var fs = require("fs");
 var protocolDownloader = require("./protocols/ProtocolDownloader");
 var protocolManager = require("./protocols/ProtocolManager");
 
@@ -39,7 +40,11 @@ var server = net.createServer(function(socket) {
         }
     }
     
-    print(socket.remoteAddress + " Connected to SPM node");
+    print(socket.remoteAddress + " Made a request to SPM node");
+
+    socket.on("end", function(){
+        print("fired");
+    });
 
     /**
      * Handle data
@@ -59,31 +64,52 @@ var server = net.createServer(function(socket) {
             
             switch (req.type) {
                 case "getProtocol":
-                    /**if (!req.name) {
-                        send("error", "Missing protocol name")
+                    if(!req.name) {
+                        send("error", "Missing arguments");
+                        return;
                     }
-                    
-                    var protocolList = fs.readdirSync("protocols")
-                    
-                    if (protocolList.indexOf(req.name) == -1) {
-                        send("error", "Requested protocol not known")
+
+                    var files = [];
+                    var protocols = protocolManager.getProtocols();
+                    if(protocols.indexOf(req.name) > -1){
+                        var name = req.name.toLowerCase();
+
+                        try {
+                            var config = protocolDownloader.getProtoConfig(name);
+
+                            if(config){
+                                var preparedPacket = { "type" : "sendProtocol" };
+
+                                preparedPacket.fileList = config.files;
+                                preparedPacket.npm = config.npm_dependecies;
+                                preparedPacket.extendedInfo = config;
+                                preparedPacket.filedata = {};
+
+                                preparedPacket.fileList.forEach(function(file, index){
+                                    preparedPacket.filedata[file] = fs.readFileSync('./protocols/cache/' + name + "/" + file).toString();
+
+                                    if(index === (config.files.length - 1)){
+                                        send("saveProtocol", JSON.stringify(preparedPacket));
+                                        socket.destroy()
+                                    }
+                                });
+                            } else {
+                                send("error", "Unknown exception 102");
+                                socket.destroy();
+                            }
+                        } catch(err) {
+                            send("error", "Unknown exception 101");
+                            socket.destroy();
+                        }
+
+
+                    } else {
+                        send("error", "Unknown protocol: " + req.name);
+                        socket.destroy();
                     }
-                    
-                    var fileList = fs.readdirSync("cache/" + req.name)
-                    var files = []
-                    
-                    for (var i = 0; i < fileList.length; i++) {
-                        files.push({
-                            "name": fileList[i],
-                            "data": fs.readFileSync("protocols/" + req.name + "/" + fileList[i]).toString("utf-8")
-                        })
-                    }
-                    
-                    send("saveProtocol", files)
-                    socket.destroy()*/
+
                     break;
                 case "getProtocolList":
-                    protocolManager.reloadProtocols();
                     var list = protocolManager.getProtocols();
                     send("protocolList", list);
 
@@ -92,17 +118,11 @@ var server = net.createServer(function(socket) {
                 default:
                     send("error", "Unknown type")
             }
-            
-            console.log(req)
         }
         catch (err) {
             console.log(err.stack);
         }
     });
+}).listen(4575);
 
-
-
-});
-
-server.listen(4575);
 print("Server started! (" + (process.uptime()) + " s)");

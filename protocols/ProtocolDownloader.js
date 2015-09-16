@@ -30,6 +30,7 @@ function initProtocolFile(){
 
                 try {
                     fs.mkdirSync(path.resolve(__dirname, "cache"));
+                    fs.mkdirSync(path.resolve(__dirname, "../cache"));
                     fs.mkdirSync(path.resolve(__dirname, "cache/" + name));
                 } catch(err){
 
@@ -49,6 +50,8 @@ function initProtocolFile(){
                     }
                 });
 
+                fs.writeFileSync(path.resolve(__dirname, '../cache/protocols.json'), JSON.stringify(protocolRepository));
+
                 print("Loaded " + name + ", using latest stable version: " + stable)
             }
         });
@@ -61,17 +64,24 @@ function getGithubContentUrl(version){
 
 function getProtocolConfig(name){
     var endObj;
-
-    if(protocolRepository[name] === undefined){
-        return false;
-    } else {
-        endObj = protocolRepository[name];
-        if(endObj.files === undefined || endObj.stable_version === undefined){
+    try{
+        protocolRepository = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../cache/protocols.json')));
+        if(protocolRepository[name] === undefined){
             return false;
         } else {
-            return endObj
+            endObj = protocolRepository[name];
+            if(endObj.files === undefined || endObj.stable_version === undefined){
+                return false;
+            } else {
+                return endObj
+            }
         }
+    } catch(err) {
+        return false;
     }
+
 }
+
+exports.getProtoConfig = function(name) { return getProtocolConfig(name)};
 
 initProtocolFile();
