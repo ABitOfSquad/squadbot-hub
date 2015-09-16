@@ -28,4 +28,5 @@ node_modules
 
 # Will now be downloaded by spm
 protocols/cache/
+cache/*
 plugins/*

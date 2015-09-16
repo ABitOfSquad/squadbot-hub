@@ -78,9 +78,10 @@ var server = net.createServer(function(socket) {
                             var config = protocolDownloader.getProtoConfig(name);
 
                             if(config){
-                                var preparedPacket = { "type" : "sendProtocol" };
+                                var preparedPacket = {};
 
                                 preparedPacket.fileList = config.files;
+                                preparedPacket.name = req.name;
                                 preparedPacket.npm = config.npm_dependecies;
                                 preparedPacket.extendedInfo = config;
                                 preparedPacket.filedata = {};
